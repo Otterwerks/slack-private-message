@@ -1,5 +1,5 @@
 # slack-private-message
-A chrome extension allowing users to send private encrypted messaged to each other over Slack.
+A chrome extension allowing users to send private encrypted messages to each other over Slack.
 
 Still a work in progress...
 

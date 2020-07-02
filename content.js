@@ -54,22 +54,30 @@ const encryptionIndicator = "<<!>>";
 
 const encryptText = () => {
 	const secret = getSecrets();
-	const textField = document.getElementsByClassName("ql-editor")[0].childNodes[0];
-	const message = textField.innerText;
+	const textField = document.getElementsByClassName("ql-editor")[0].firstChild;
+	const message = textField.innerHTML;
+	alert(message);
 	if (message != currentMessage) {
+		if (message == "") {
+			return;
+		};
 		var encryptedMessage = CryptoJS.AES.encrypt(message, secret).toString();
 		currentMessage = encryptionIndicator + encryptedMessage;
 		textField.innerText = encryptionIndicator + encryptedMessage;
 	} else {
-		alert("already encrypted");
+		alert("This message has already been encrypted!");
 	};
 };
 
 const decryptText = (encryptedMessage) => {
 	const secret = getSecrets();
 	var bytes  = CryptoJS.AES.decrypt(encryptedMessage, secret);
-	const decryptedMessage = "SlackPM Secure Message: " + bytes.toString(CryptoJS.enc.Utf8);
-	return decryptedMessage;
+	const decryptedMessage = bytes.toString(CryptoJS.enc.Utf8);
+	if (decryptedMessage == "") {
+		return "Unable to decrypt: " + encryptedMessage;
+	} else {
+		return "SlackPM Secure Message: " + decryptedMessage;
+	};
 };
 
 const processNewMessages = (messageList) => {
@@ -78,7 +86,7 @@ const processNewMessages = (messageList) => {
 			const encryptedMessage = messageList[i].firstChild.firstChild.firstChild.lastChild.lastChild.lastChild.firstChild.innerText;
 			if (encryptedMessage.slice(0, 5) == encryptionIndicator) {
 				const decryptedMessage = decryptText(encryptedMessage.slice(5));
-				messageList[i].firstChild.firstChild.firstChild.lastChild.lastChild.lastChild.firstChild.innerText = decryptedMessage;
+				messageList[i].firstChild.firstChild.firstChild.lastChild.lastChild.lastChild.firstChild.innerHTML = decryptedMessage;
 			};
 		} catch (error) {
 			continue;
