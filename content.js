@@ -32,7 +32,7 @@ const renderButton = (button, parentNode, insertLocation, eventAction) => {
 
 const initializeMessageObserver = () => {
 	const messagePane = document.getElementsByClassName("c-virtual_list__scroll_container")[1];
-	const messageObserverConfig = {attributes:true, childList:true, subtree:false, characterData:false};
+	const messageObserverConfig = {attributes:true, childList:true, subtree:true, characterData:false};
 	const messageObserver = new MutationObserver(messageObserverCallback);
 	messageObserver.observe(messagePane, messageObserverConfig);
 };
@@ -43,9 +43,6 @@ const messageObserverCallback = (mutationsList, observer) => {
 			processNewMessages(mutation.addedNodes);
         };
 	};
-	if (document.getElementById("encryptButton") == null) {
-
-	}
 };
 
 const decryptExistingMessages = () => {
@@ -55,7 +52,7 @@ const decryptExistingMessages = () => {
 
 window.onload = function() {	
 	const workspace = document.getElementsByClassName("p-workspace__primary_view_contents")[0];
-	const observerConfig = {attributes:false, childList:true, subtree:true, characterData:false};
+	const observerConfig = {attributes:false, childList:true, subtree:false, characterData:false};
 	const observer = new MutationObserver(observerCallback);
 	observer.observe(workspace, observerConfig);
 	initialize();
@@ -64,7 +61,7 @@ window.onload = function() {
 const observerCallback = (mutationsList, observer) => {
     for (let mutation of mutationsList) {
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-			for (let i=0;i<mutation.addedNodes.length;i++) {
+			for (let i = 0; i < mutation.addedNodes.length; i++) {
 				if (mutation.addedNodes[i].className == "ql-composer") {
 					initialize();
 				};
@@ -90,6 +87,15 @@ const addSecret = (secret) => {
 
 // Encryption & Decryption
 const encryptionIndicator = "<<!>>";
+
+const indicatorPresent = (string) => {
+	if (string.slice(0, 5) == encryptionIndicator) {
+		return true;
+	} else {
+		return false;
+	};
+};
+
 const encryptionSuccessNote = "SlackPM Secure Message: ";
 const encryptionFailureNote = "Unable to decrypt: ";
 
@@ -98,7 +104,7 @@ const encryptText = () => {
 	const textField = document.getElementsByClassName("ql-editor")[0].firstChild;
 	const message = textField.innerHTML;
 	const messageText = textField.textContent;
-	if (messageText.slice(0,5) != encryptionIndicator) {
+	if (!indicatorPresent(messageText)) {
 		if (messageText == "") {
 			return;
 		};
@@ -121,18 +127,32 @@ const decryptText = (encryptedMessage) => {
 };
 
 const processNewMessages = (messageList) => {
-	for (let i=0;i<messageList.length;i++) {
+	for (let i = 0; i < messageList.length; i++) {
 		try {
-			const encryptedMessage = messageList[i].firstChild.firstChild.firstChild.lastChild.lastChild.lastChild.firstChild.innerText;
-			if (encryptedMessage.slice(0, 5) == encryptionIndicator) {
+			const textElement = findTextElement(messageList[i]);
+			const encryptedMessage = textElement.textContent;
+			if (indicatorPresent(encryptedMessage)) {
 				const decryptedMessage = decryptText(encryptedMessage.slice(5));
-				messageList[i].firstChild.firstChild.firstChild.lastChild.lastChild.lastChild.firstChild.innerHTML = decryptedMessage;
+				textElement.innerHTML = decryptedMessage;
 			};
 		} catch (error) {
 			continue;
 		};
 	};
 };
+
+const findTextElement = (node) => {
+    if (indicatorPresent(node.textContent)) {
+        return node;
+    };
+    for (let i = node.childNodes.length; i > 0; i--) {
+        let nextNode = findTextElement(node.childNodes[i-1]);
+        if (nextNode != null) {
+            return nextNode;
+        };
+	};
+    return null;
+}
 
 
 
