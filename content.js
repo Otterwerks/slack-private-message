@@ -1,17 +1,20 @@
 // Initialization and Listeners
 var CryptoJS = require("crypto-js"); //only for running webpack build
 
+chrome.runtime.onMessage.addListener(
+	function(request, sender, sendResponse) {
+		if (request.message === "addSecret") {
+			var secret = request.value;
+			addSecret(secret);
+		};
+	}
+);
+
 const encryptButton = {
 	id: "encryptButton",
 	class: "c-button-unstyled c-icon_button c-icon_button--light p-composer__button p-composer__button--sticky",
 	style: "margin-left:auto;padding-left:1em;padding-right:1em;width:10em;text-align:center;",
 	text: "Encrypt Message"
-};
-
-window.onload = function() {	
-	initializeEncryptionButton();
-	initializeObserver();
-	decryptExistingMessages();
 };
 
 const initializeEncryptionButton = () => {
@@ -27,14 +30,14 @@ const renderButton = (button, parentNode, insertLocation, eventAction) => {
 	document.getElementById(button.id).addEventListener("click", eventAction);
 };
 
-const initializeObserver = () => {
+const initializeMessageObserver = () => {
 	const messagePane = document.getElementsByClassName("c-virtual_list__scroll_container")[1];
-	const observerConfig = {attributes:true, childList:true, subtree:false, characterData:false};
-	const observer = new MutationObserver(observerCallback);
-	observer.observe(messagePane, observerConfig);
+	const messageObserverConfig = {attributes:true, childList:true, subtree:false, characterData:false};
+	const messageObserver = new MutationObserver(messageObserverCallback);
+	messageObserver.observe(messagePane, messageObserverConfig);
 };
 
-const observerCallback = function(mutationsList, observer) {
+const messageObserverCallback = (mutationsList, observer) => {
     for (let mutation of mutationsList) {
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
 			processNewMessages(mutation.addedNodes);
@@ -50,14 +53,31 @@ const decryptExistingMessages = () => {
 	processNewMessages(existingMessages);
 }
 
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    if (request.message === "addSecret") {
-      var secret = request.value;
-		addSecret(secret);
-    };
-  }
-);
+window.onload = function() {	
+	const workspace = document.getElementsByClassName("p-workspace__primary_view_contents")[0];
+	const observerConfig = {attributes:false, childList:true, subtree:true, characterData:false};
+	const observer = new MutationObserver(observerCallback);
+	observer.observe(workspace, observerConfig);
+	initialize();
+};
+
+const observerCallback = (mutationsList, observer) => {
+    for (let mutation of mutationsList) {
+        if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+			for (let i=0;i<mutation.addedNodes.length;i++) {
+				if (mutation.addedNodes[i].className == "ql-composer") {
+					initialize();
+				};
+			};
+        };
+	};
+};
+
+const initialize = () => {
+	initializeEncryptionButton();
+	initializeMessageObserver();
+	decryptExistingMessages();
+};
 
 // Secret Management
 const getSecrets = () => {
@@ -70,13 +90,14 @@ const addSecret = (secret) => {
 
 // Encryption & Decryption
 const encryptionIndicator = "<<!>>";
+const encryptionSuccessNote = "SlackPM Secure Message: ";
+const encryptionFailureNote = "Unable to decrypt: ";
 
 const encryptText = () => {
 	const secret = getSecrets();
 	const textField = document.getElementsByClassName("ql-editor")[0].firstChild;
 	const message = textField.innerHTML;
 	const messageText = textField.textContent;
-	console.log(messageText);
 	if (messageText.slice(0,5) != encryptionIndicator) {
 		if (messageText == "") {
 			return;
@@ -93,9 +114,9 @@ const decryptText = (encryptedMessage) => {
 	var bytes  = CryptoJS.AES.decrypt(encryptedMessage, secret);
 	const decryptedMessage = bytes.toString(CryptoJS.enc.Utf8);
 	if (decryptedMessage == "") {
-		return "Unable to decrypt: " + encryptedMessage;
+		return encryptionFailureNote + encryptedMessage;
 	} else {
-		return "SlackPM Secure Message: " + decryptedMessage;
+		return encryptionSuccessNote + decryptedMessage;
 	};
 };
 
