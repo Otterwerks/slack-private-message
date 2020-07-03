@@ -1,25 +1,37 @@
 // Initialization and Listeners
 var CryptoJS = require("crypto-js"); //only for running webpack build
-window.onload = function() {	
-	const buttonGroup = document.getElementsByClassName("p-composer__body")
-	const encryptButtonSource = '<button id="encryptButton" class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button p-composer__button--sticky" style="margin-left:auto;padding-left:1em;padding-right:1em;width:10em;text-align:center;">Encrypt Message</button>'
-	if (buttonGroup.length > 0) {
-		buttonGroup[0].insertAdjacentHTML("beforeend", encryptButtonSource);
-	};
-	const encryptButton = document.getElementById("encryptButton")
-	if (encryptButton != null) {
-		encryptButton.addEventListener("click", encryptText);
-	};
 
+const encryptButton = {
+	id: "encryptButton",
+	class: "c-button-unstyled c-icon_button c-icon_button--light p-composer__button p-composer__button--sticky",
+	style: "margin-left:auto;padding-left:1em;padding-right:1em;width:10em;text-align:center;",
+	text: "Encrypt Message"
+};
+
+window.onload = function() {	
+	initializeEncryptionButton();
+	initializeObserver();
+	decryptExistingMessages();
+};
+
+const initializeEncryptionButton = () => {
+	const buttonGroup = document.getElementsByClassName("p-composer__body");
+	if (buttonGroup.length > 0 && document.getElementById("encryptButton") == null) {
+		renderButton(encryptButton, buttonGroup[0], "beforeend", encryptText);
+	};
+};
+
+const renderButton = (button, parentNode, insertLocation, eventAction) => {
+	const buttonSource = '<button id="' + button.id + '" class="' + button.class + '" style="' + button.style + '">' + button.text + '</button>';
+	parentNode.insertAdjacentHTML(insertLocation, buttonSource);
+	document.getElementById(button.id).addEventListener("click", eventAction);
+};
+
+const initializeObserver = () => {
 	const messagePane = document.getElementsByClassName("c-virtual_list__scroll_container")[1];
 	const observerConfig = {attributes:true, childList:true, subtree:false, characterData:false};
 	const observer = new MutationObserver(observerCallback);
 	observer.observe(messagePane, observerConfig);
-
-	const initialMessages = document.getElementsByClassName("c-virtual_list__item");
-	setTimeout(function() {
-		processNewMessages(initialMessages);
-	}, 3000);
 };
 
 const observerCallback = function(mutationsList, observer) {
@@ -27,8 +39,16 @@ const observerCallback = function(mutationsList, observer) {
         if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
 			processNewMessages(mutation.addedNodes);
         };
-    };
+	};
+	if (document.getElementById("encryptButton") == null) {
+
+	}
 };
+
+const decryptExistingMessages = () => {
+	const existingMessages = document.getElementsByClassName("c-virtual_list__item");
+	processNewMessages(existingMessages);
+}
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
@@ -49,21 +69,20 @@ const addSecret = (secret) => {
 };
 
 // Encryption & Decryption
-var currentMessage = "";
 const encryptionIndicator = "<<!>>";
 
 const encryptText = () => {
 	const secret = getSecrets();
 	const textField = document.getElementsByClassName("ql-editor")[0].firstChild;
 	const message = textField.innerHTML;
-	alert(message);
-	if (message != currentMessage) {
-		if (message == "") {
+	const messageText = textField.textContent;
+	console.log(messageText);
+	if (messageText.slice(0,5) != encryptionIndicator) {
+		if (messageText == "") {
 			return;
 		};
 		var encryptedMessage = CryptoJS.AES.encrypt(message, secret).toString();
-		currentMessage = encryptionIndicator + encryptedMessage;
-		textField.innerText = encryptionIndicator + encryptedMessage;
+		textField.textContent = encryptionIndicator + encryptedMessage;
 	} else {
 		alert("This message has already been encrypted!");
 	};
