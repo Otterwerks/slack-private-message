@@ -32,7 +32,7 @@ const renderButton = (button, parentNode, insertLocation, eventAction) => {
 
 const initializeMessageObserver = () => {
 	const messagePane = document.getElementsByClassName("c-virtual_list__scroll_container")[1];
-	const messageObserverConfig = {attributes:true, childList:true, subtree:true, characterData:false};
+	const messageObserverConfig = {attributes:true, childList:true, subtree:false, characterData:false};
 	const messageObserver = new MutationObserver(messageObserverCallback);
 	messageObserver.observe(messagePane, messageObserverConfig);
 };
@@ -52,7 +52,7 @@ const decryptExistingMessages = () => {
 
 window.onload = function() {	
 	const workspace = document.getElementsByClassName("p-workspace__primary_view_contents")[0];
-	const observerConfig = {attributes:false, childList:true, subtree:false, characterData:false};
+	const observerConfig = {attributes:false, childList:true, subtree:true, characterData:false};
 	const observer = new MutationObserver(observerCallback);
 	observer.observe(workspace, observerConfig);
 	initialize();
@@ -87,6 +87,8 @@ const addSecret = (secret) => {
 
 // Encryption & Decryption
 const encryptionIndicator = "<<!>>";
+const encryptionSuccessNote = "SlackPM Secure Message: ";
+const encryptionFailureNote = "Unable to decrypt: ";
 
 const indicatorPresent = (string) => {
 	if (string.slice(0, 5) == encryptionIndicator) {
@@ -95,9 +97,6 @@ const indicatorPresent = (string) => {
 		return false;
 	};
 };
-
-const encryptionSuccessNote = "SlackPM Secure Message: ";
-const encryptionFailureNote = "Unable to decrypt: ";
 
 const encryptText = () => {
 	const secret = getSecrets();
