@@ -6,6 +6,9 @@ chrome.runtime.onMessage.addListener(
 		if (request.message === "addSecret") {
 			var secret = request.value;
 			addSecret(secret);
+		} else if (request.message === "requestSecretList") {
+			const secretList = getSecrets();
+			sendResponse({"secretList": secretList});
 		};
 	}
 );
@@ -56,6 +59,9 @@ window.onload = function() {
 	const observer = new MutationObserver(observerCallback);
 	observer.observe(workspace, observerConfig);
 	initialize();
+	if (getSecrets() == null) {
+		alert("Please set a secret by clicking the SlackPM extension icon in the toolbar.");
+	}
 };
 
 const observerCallback = (mutationsList, observer) => {
@@ -78,11 +84,12 @@ const initialize = () => {
 
 // Secret Management
 const getSecrets = () => {
-	return window.localStorage.getItem("slackpm_secret");
+	return JSON.parse(window.localStorage.getItem("slackpm_secrets"));
 };
 
 const addSecret = (secret) => {
-    window.localStorage.setItem("slackpm_secret", secret);
+	window.localStorage.setItem("slackpm_secrets", JSON.stringify([secret]));
+	decryptExistingMessages();
 };
 
 // Encryption & Decryption
@@ -99,7 +106,7 @@ const indicatorPresent = (string) => {
 };
 
 const encryptText = () => {
-	const secret = getSecrets();
+	const secret = getSecrets()[0].value;
 	const textField = document.getElementsByClassName("ql-editor")[0].firstChild;
 	const message = textField.innerHTML;
 	const messageText = textField.textContent;
@@ -115,7 +122,7 @@ const encryptText = () => {
 };
 
 const decryptText = (encryptedMessage) => {
-	const secret = getSecrets();
+	const secret = getSecrets()[0].value;
 	var bytes  = CryptoJS.AES.decrypt(encryptedMessage, secret);
 	const decryptedMessage = bytes.toString(CryptoJS.enc.Utf8);
 	if (decryptedMessage == "") {
