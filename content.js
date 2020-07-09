@@ -26,12 +26,13 @@ const diffieHellmanButton = `
   		<button type="button" class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button p-composer__button--sticky dropdown-toggle" data-toggle="dropdown">
     		Secure Key Exchange
   		</button>
-		<div class="dropdown-menu">
-			<button class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button p-composer__button--sticky dropdown-item" href="#">Action</button>
-			<button class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button p-composer__button--sticky dropdown-item" href="#">Another action</button>
-			<button class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button p-composer__button--sticky dropdown-item" href="#">Something else here</button>
+		<div class="dropdown-menu px-1">
+			<button class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button dropdown-item">Generate Computation</button>
 			<div class="dropdown-divider"></div>
-			<button class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button p-composer__button--sticky dropdown-item" href="#">Separated link</button>
+			<button class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button dropdown-item">Import Friend's Computation</button>
+			<div class="dropdown-divider"></div>
+			<button class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button dropdown-item">Reset</button>
+			<div class="dropdown-divider"></div>
   		</div>
 	</div>
 `;
@@ -47,7 +48,7 @@ const initializeDiffieHellmanButton = () => {
 	const buttonGroup = document.getElementsByClassName("p-composer__body");
 	if (buttonGroup.length > 0 && document.getElementById("dhButton") == null) {
 		buttonGroup[0].insertAdjacentHTML("beforeend", diffieHellmanButton);
-		//document.getElementById("dhbutton").addEventListener("click", initiateDiffieHellman);
+		document.getElementById("dhbutton").addEventListener("click", initiateDiffieHellman);
 	};
 };
 
@@ -218,9 +219,15 @@ const generateA = () => {
 const initiateDiffieHellman = () => {
 	diffieHellmanPending = true;
 	diffieHellmanSecretKey = generateA();
-	var computation = diffieHellmanG.modPow(diffieHellmanSecretKey, diffieHellmanP);
-	writeToEditor(computation);
-	console.log(computation);
+	const testFriendSecretKey = generateA();
+	const computation = diffieHellmanG.modPow(diffieHellmanSecretKey, diffieHellmanP).toString(36);
+	const friendComputation = diffieHellmanG.modPow(testFriendSecretKey, diffieHellmanP).toString(36);
+	const sharedSecret = bigInt(friendComputation, 36).modPow(diffieHellmanSecretKey, diffieHellmanP);
+	const friendSharedSecret = bigInt(computation, 36).modPow(testFriendSecretKey, diffieHellmanP);
+	console.log(bigInt(sharedSecret).equals(friendSharedSecret));
+	console.log(sharedSecret);
+	console.log(friendSharedSecret);
+	//writeToEditor(computation.toString(36).toUpperCase());
 };
 
 const completeDiffieHellman = () => {
