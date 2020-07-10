@@ -29,8 +29,6 @@ var diffieHellmanButton = `
 		<div class="dropdown-menu px-2">
 			<button id="slackPM_dh_generate" class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button dropdown-item">Generate Computation</button>
 			<div class="dropdown-divider"></div>
-			<button id="slackPM_dh_importttttt" class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button dropdown-item">Import Friend's Computation</button>
-			<div class="dropdown-divider"></div>
 			<button id="slackPM_dh_reset" class="c-button-unstyled c-icon_button c-icon_button--light p-composer__button dropdown-item">Reset</button>
 			<div class="dropdown-divider"></div>
   		</div>
@@ -138,6 +136,7 @@ const writeToEditor = (input) => {
 const encryptionIndicator = "<<!>>";
 const encryptionSuccessNote = "SlackPM Secure Message: ";
 const encryptionFailureNote = "Unable to decrypt: ";
+const diffieHellmanImportMessage = "Establish a shared secret key with this user by sending your own generated computation and then clicking the button below.";
 
 const indicatorPresent = (stringToCheck, indicator) => {
 	if (stringToCheck.slice(0, indicator.length) == indicator) {
@@ -174,40 +173,43 @@ const decryptText = (encryptedMessage) => {
 };
 
 const processNewMessages = (messageList) => {
+	const ownSelf = document.getElementsByClassName("p-ia__sidebar_header__user__name")[0].textContent;
+	var userName = null;
 	for (let i = 0; i < messageList.length; i++) {
-		try {
-			const encryptionMessageBlock = findTextElement(messageList[i], encryptionIndicator);
-			const diffieHellmanMessageBlock = findTextElement(messageList[i], diffieHellmanIndicator);
-			if (encryptionMessageBlock) {
-				const encryptedMessage = encryptionMessageBlock.textContent.slice(encryptionIndicator.length);
-				encryptionMessageBlock.innerHTML = decryptText(encryptedMessage);
-				console.log(ownSelf);
-			} else if (diffieHellmanMessageBlock) {
-				const ownSelf = document.getElementsByClassName("p-ia__sidebar_header__user__name")[0].textContent;
-				if (findTextElement(messageList[i], ownSelf)) { //removed ! for testing to allow on my own messages
-					const buttonValue = diffieHellmanMessageBlock.textContent.slice(diffieHellmanIndicator.length);
-					const keyName = messageList[i].getElementsByClassName("c-message__sender_link")[0].textContent;
-					const importButton = {
-						id: "slackPM_dh_import_" + buttonValue,
-						class: "btn btn-outline-secondary",
-						style: "",
-						text: "Import Computation"
-					};
-					renderButton(importButton, diffieHellmanMessageBlock, "beforeend", function() {completeDiffieHellman(buttonValue, keyName)})
-				};
+		const encryptionMessageBlock = findTextElement(messageList[i], encryptionIndicator);
+		const diffieHellmanMessageBlock = findTextElement(messageList[i], diffieHellmanIndicator);
+		if (encryptionMessageBlock) {
+			const encryptedMessage = encryptionMessageBlock.textContent.slice(encryptionIndicator.length);
+			encryptionMessageBlock.innerHTML = decryptText(encryptedMessage);
+		} else if (diffieHellmanMessageBlock) {
+			const nameSection = messageList[i].getElementsByClassName("c-message__sender_link");
+			if (nameSection[0]) {
+				userName = nameSection[0].textContent;
 			};
-		} catch (error) {
-			continue;
+			const keyValue = diffieHellmanMessageBlock.textContent.slice(diffieHellmanIndicator.length);
+			if (userName == ownSelf) { //removed ! for testing to allow on my own messages
+				const keyName = userName;
+				const importButton = {
+					id: "slackPM_dh_import_" + keyValue,
+					class: "btn btn-sm btn-outline-secondary",
+					style: "",
+					text: "Save Secret"
+				};
+				diffieHellmanMessageBlock.innerHTML = "<p><strong>" + keyValue.slice(0, 10) + "...</strong>&nbsp&nbsp" + diffieHellmanImportMessage + "</p>";
+				renderButton(importButton, diffieHellmanMessageBlock, "beforeend", function() {completeDiffieHellman(buttonValue, keyName)})
+			} else {
+				diffieHellmanMessageBlock.innerHTML = "<p><strong>" + keyValue.slice(0, 10) + "...</strong>&nbsp&nbsp(Your computation)</p>";
+			};
 		};
 	};
 };
 
 const findTextElement = (node, target) => {
-    if (indicatorPresent(node.textContent, target)) {
-        return node;
-    };
-    for (let i = node.childNodes.length; i > 0; i--) {
-        let nextNode = findTextElement(node.childNodes[i-1], target);
+	if (indicatorPresent(node.textContent, target)) {
+		return node;
+	};
+    for (let i = node.childNodes.length - 1; i >= 0; i--) {
+        let nextNode = findTextElement(node.childNodes[i], target);
         if (nextNode != null) {
             return nextNode;
         };
@@ -236,15 +238,8 @@ const generateSecret = () => {
 const initiateDiffieHellman = () => {
 	diffieHellmanPending = true;
 	diffieHellmanSecretKey = generateSecret();
-	const testFriendSecretKey = generateSecret();
 	const diffieHellmanA = diffieHellmanG.modPow(diffieHellmanSecretKey, diffieHellmanP).toString(36);
-	const friendComputation = diffieHellmanG.modPow(testFriendSecretKey, diffieHellmanP).toString(36);
-	const sharedSecret = bigInt(friendComputation, 36).modPow(diffieHellmanSecretKey, diffieHellmanP);
-	const friendSharedSecret = bigInt(computation, 36).modPow(testFriendSecretKey, diffieHellmanP);
-	console.log(bigInt(sharedSecret).equals(friendSharedSecret));
-	console.log(sharedSecret);
-	console.log(friendSharedSecret);
-	//writeToEditor(computation.toString(36).toUpperCase());
+	writeToEditor("<<?>>" + diffieHellmanA.toString(36).toUpperCase());
 };
 
 const completeDiffieHellman = (diffieHellmanB, keyName) => {
@@ -255,6 +250,7 @@ const completeDiffieHellman = (diffieHellmanB, keyName) => {
 	};
 	const sharedSecret = bigInt(diffieHellmanB, 36).modPow(diffieHellmanSecretKey, diffieHellmanP);
 	//save key entry
+	console.log(sharedSecret);
 	cleanupDiffieHellman();
 };
 
