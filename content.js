@@ -311,7 +311,7 @@ const processNewMessages = (messageList) => {
 				userName = nameSection[0].textContent;
 			};
 			const keyValue = diffieHellmanMessageBlock.textContent.slice(diffieHellmanIndicator.length);
-			if (userName == ownSelf) { //removed ! for testing to allow on my own messages
+			if (userName !== ownSelf) {
 				const keyName = userName;
 				const importButton = {
 					id: "slackPM_dh_import_" + keyValue,
