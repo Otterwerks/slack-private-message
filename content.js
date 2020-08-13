@@ -166,7 +166,11 @@ const initialize = () => {
 let currentSecret = null;
 
 const getSecrets = () => {
-	return JSON.parse(window.localStorage.getItem("slackpm_secrets"));
+	var secrets = JSON.parse(window.localStorage.getItem("slackpm_secrets"));
+	if (secrets == null) {
+		secrets = [];
+	};
+	return secrets;
 };
 
 const addSecret = (name, secret) => {
