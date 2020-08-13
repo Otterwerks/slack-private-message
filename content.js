@@ -195,6 +195,16 @@ const setSecret = (secretName) => {
 	selectSecretButton.textContent = secretName;
 };
 
+const checkSecretExists = (secretName) => {
+	const secretList = getSecrets();
+	for (let i=0; i<secretList.length; i++) {
+		if (secretList[i]["name"] == secretName) {
+			return true;
+		};
+	};
+	return false;
+};
+
 // Helpers
 const readFromEditor = (type) => {
 	const editorField = document.getElementsByClassName("ql-editor")[0].firstChild;
@@ -358,8 +368,13 @@ const completeDiffieHellman = (diffieHellmanB, keyName) => {
 		return;
 	};
 	const sharedSecret = bigInt(diffieHellmanB, 36).modPow(diffieHellmanSecretKey, diffieHellmanP);
-	addSecret(keyName, sharedSecret);
-	insertIntoMenu(keyName);
+	const alreadyExists = checkSecretExists(keyName);
+	if (!alreadyExists) {
+		addSecret(keyName, sharedSecret);
+		insertIntoMenu(keyName);
+	} else {
+		alert("Shared secret already established with this user!");
+	}
 	cleanupDiffieHellman();
 
 };
