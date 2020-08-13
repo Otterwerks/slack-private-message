@@ -4,9 +4,16 @@ window.onload=function(){
 };
 
 const submitSecret = () => {
-	let secret = {"name": "Current Secret", "value": document.getElementById("newSecret").value};
+	let secret = {"name": "Custom Secret", "value": document.getElementById("newSecret").value};
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 		chrome.tabs.sendMessage(tabs[0].id, {"message": "addSecret", "value": secret});
+	});
+	populateSecrets();
+};
+
+const removeSecret = (name) => {
+	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+		chrome.tabs.sendMessage(tabs[0].id, {"message": "removeSecret", "value": name});
 	});
 	populateSecrets();
 };
@@ -25,9 +32,10 @@ const populateSecrets = () => {
 
 const renderSecretList = (secretList) => {
 	var container = document.getElementById("secretListContainer");
-	var secretListMarkup = "";
+	container.innerHTML = "";
 	for (let i = 0; i < secretList.length; i++) {
-		secretListMarkup = secretListMarkup + '<div class="input-group"><div class="input-group-prepend"><span class="input-group-text">' + secretList[i].name + '</span></div><input type="text" class="form-control" disabled value="' + secretList[i].value + '"></div>';
+		buttonMarkup = '<div class="input-group my-1"><div class="input-group-prepend w-50"><span class="input-group-text w-100">' + secretList[i].name + '</span></div><input type="text" class="form-control" disabled value="' + secretList[i].value + '"><div class="input-group-append"><button id="remove_' + secretList[i].name + '" class="btn btn-danger">X</button></div></div>';
+		container.insertAdjacentHTML("beforeend", buttonMarkup);
+		document.getElementById("remove_" + secretList[i].name).addEventListener("click", () => {removeSecret(secretList[i].name)})
 	};
-	container.innerHTML = secretListMarkup;
 };

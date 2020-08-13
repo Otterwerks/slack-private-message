@@ -11,12 +11,20 @@
         "default_action": "logo.png",
         "default_popup": "popup.html"
         },
+    "web_accessible_resources": [
+        "css/bootstrap.min.css",
+        "js/jquery.min.js",
+        "js/bootstrap.bundle.min.js"
+    ],
     "content_scripts": [
       {
         "matches": ["*://app.slack.com/*"],
         "js": [
-          "dist/bundle.js"
-        ]
+          "dist/bundle.js",
+          "js/jquery.min.js",
+          "js/bootstrap.bundle.min.js"
+        ],
+        "css": ["css/bootstrap.min.css"]
       }
     ],
     "background": {

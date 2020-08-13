@@ -7,6 +7,7 @@
   },
   "author": "Samuel Weber",
   "dependencies": {
+    "big-integer": "^1.6.48",
     "crypto-js": "^4.0.0",
     "webpack": "^4.43.0"
   },
