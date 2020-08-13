@@ -197,7 +197,7 @@ const setSecret = (secretName) => {
 
 const checkSecretExists = (secretName) => {
 	const secretList = getSecrets();
-	for (let i=0; i<secretList.length; i++) {
+	for (let i = 0; i < secretList.length; i++) {
 		if (secretList[i]["name"] == secretName) {
 			return true;
 		};
@@ -223,10 +223,15 @@ const writeToEditor = (input) => {
 const addSecretHelper = () => {
 	var name = document.getElementById("slackPM_newSecret_name");
 	var value = document.getElementById("slackPM_newSecret_value");
-	addSecret(name.value, value.value);
-	insertIntoMenu(name.value);
-	name.value = "";
-	value.value = "";
+	const exists = checkSecretExists(name.value);
+	if (exists) {
+		alert("Please choose a different name");
+	} else {
+		addSecret(name.value, value.value);
+		insertIntoMenu(name.value);
+		name.value = "";
+		value.value = "";
+	};
 };
 
 const insertIntoMenu = (secretName) => {
